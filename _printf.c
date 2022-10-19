@@ -1,67 +1,92 @@
 #include "main.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 /**
- * _strlen - Returns the length of a string
- * @s: The string
- *
- * Return: The length of the string
+ * printIdentifiers - prints special characters
+ * @next: character after the %
+ * @arg: argument for the indentifier
+ * Return: the number of characters printed
+ * (excluding the null byte used to end output to strings)
  */
-int _strlen(const char *s)
+
+int printIdentifiers(char next, va_list arg)
 {
-	int len = 0;
+	int functsIndex;
 
-	while (s[len])
-		len++;
+	identifierStruct functs[] = {
+		{"c", print_char},
+		{"s", print_str},
+		{"d", print_int},
+		{"i", print_int},
+		{"u", print_unsigned},
+		{"b", print_unsignedToBinary},
+		{"o", print_oct},
+		{"x", print_hex},
+		{"X", print_HEX},
+		{"S", print_STR},
+		{NULL, NULL}
+	};
 
-	return (len);
+	for (functsIndex = 0; functs[functsIndex].indentifier != NULL; functsIndex++)
+	{
+		if (functs[functsIndex].indentifier[0] == next)
+			return (functs[functsIndex].printer(arg));
+	}
+	return (0);
 }
 
 /**
- * _printf - prints anything
- * @format: the format string
+ * _printf - mimic printf from stdio
+ * Description: produces output according to a format
+ * write output to stdout, the standard output stream
+ * @format: character string composed of zero or more directives
  *
  * Return: the number of characters printed
+ * (excluding the null byte used to end output to strings)
+ * return -1 for incomplete identifier error
  */
+
 int _printf(const char *format, ...)
 {
-	va_list args;
-	printer printer;
-	int i = 0;
-	int characters_printed = 0;
+	unsigned int i;
+	int identifierPrinted = 0, charPrinted = 0;
+	va_list arg;
 
+	va_start(arg, format);
 	if (format == NULL)
 		return (-1);
-	va_start(args, format);
-	while (format[i])
+
+	for (i = 0; format[i] != '\0'; i++)
 	{
-		for (; format[i] != '%' && format[i]; i++)
+		if (format[i] != '%')
 		{
 			_putchar(format[i]);
-			characters_printed++;
-		}
-		if (!format[i])
-			return (characters_printed);
-		if (format[i] == '%' && _strlen(format) == 1)
-			return (-1);
-		printer = _get_printer(&format[i + 1]);
-		if (printer.specifier != NULL)
-		{
-			characters_printed += printer.run(args);
-			i += 2; /* move past the specifier */
+			charPrinted++;
 			continue;
 		}
-
-		if (!format[i + 1])
-			return (characters_printed);
-
-		_putchar(format[i]);
-		characters_printed++;
-
 		if (format[i + 1] == '%')
-			i += 2; /* move past the % */
-		else
+		{
+			_putchar('%');
+			charPrinted++;
 			i++;
+			continue;
+		}
+		if (format[i + 1] == '\0')
+			return (-1);
+
+		identifierPrinted = printIdentifiers(format[i + 1], arg);
+		if (identifierPrinted == -1 || identifierPrinted != 0)
+			i++;
+		if (identifierPrinted > 0)
+			charPrinted += identifierPrinted;
+
+		if (identifierPrinted == 0)
+		{
+			_putchar('%');
+			charPrinted++;
+		}
 	}
-	va_end(args);
-	return (characters_printed);
+	va_end(arg);
+	return (charPrinted);
 }
